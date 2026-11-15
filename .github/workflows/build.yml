@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Publish release?'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: microsoft/setup-msbuild@v3
+
+      - name: Build
+        run: msbuild nssm.vcxproj -p:Configuration=Release -p:Platform=Win32
+
+      - name: Release
+        uses: softprops/action-gh-release@v2.2.1
+        if: ${{ github.event.inputs.release == 'true' }}
+        with:
+          tag_name: ${{ github.run_number }}
+          prerelease: false
+          files: out/Release/win32/nssm.exe
